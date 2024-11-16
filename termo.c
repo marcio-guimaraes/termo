@@ -82,6 +82,7 @@ int main()
         char tentativa[8];
         // Lê a tentativa do jogador
         scanf("%s", tentativa);
+        strupr(tentativa); // Deixa a palavra com letras maiusculas
 
         // Chama a função para verificar e imprimir letras com fundo verde ou amarelo
         verificarLetras(tentativa, palavraCerta, verificador1);
