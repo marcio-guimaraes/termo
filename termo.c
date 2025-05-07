@@ -11,6 +11,9 @@
 
 char palavraCerta[MAX_WORD_LENGTH];
 GtkWidget *grid;
+GtkWidget *tecladoGrid;
+GtkWidget *teclas[26]; // Para armazenar os botões das letras
+int mapeamentoTeclas[26]; // Mapeia letras A-Z para índices no layout QWERTY
 int tentativaAtual = 0;
 
 void carregarPalavras(const char *nomeArquivo, char palavras[][MAX_WORD_LENGTH], int *numPalavras)
@@ -53,6 +56,101 @@ void aplicarCor(GtkWidget *widget, const char *corCSS)
     g_object_unref(provider);
 }
 
+void inicializarTeclado(GtkWidget *caixaVertical)
+{
+    tecladoGrid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(tecladoGrid), 5);
+    gtk_grid_set_column_spacing(GTK_GRID(tecladoGrid), 5);
+    gtk_box_pack_end(GTK_BOX(caixaVertical), tecladoGrid, FALSE, FALSE, 5); // Posiciona o teclado na parte de baixo
+
+    const char *layout = "QWERTYUIOPASDFGHJKLZXCVBNM";
+    int linha = 0, coluna = 0;
+
+    for (int i = 0; i < 26; i++)
+    {
+        char letra[2] = {layout[i], '\0'};
+        GtkWidget *label = gtk_label_new(letra); // Substitui GtkButton por GtkLabel
+        gtk_widget_set_hexpand(label, TRUE);
+        gtk_widget_set_vexpand(label, TRUE);
+        gtk_widget_set_halign(label, GTK_ALIGN_CENTER);
+        gtk_widget_set_valign(label, GTK_ALIGN_CENTER);
+
+        gtk_grid_attach(GTK_GRID(tecladoGrid), label, coluna, linha, 1, 1);
+        teclas[i] = label; // Armazena o GtkLabel no array teclas
+
+        // Preenche o mapeamento para a letra atual
+        mapeamentoTeclas[layout[i] - 'A'] = i;
+
+        coluna++;
+        if ((i == 9) || (i == 18)) // Quebra de linha após 10 e 9 teclas
+        {
+            linha++;
+            coluna = 0;
+        }
+    }
+}
+
+void atualizarTeclado(const char *tentativa, const char *palavraCerta)
+{
+    int letrasUsadas[TAMANHO_PALAVRA] = {0}; // Para rastrear quais letras da palavra certa já foram usadas
+
+    // Primeiro, marque as letras que estão na posição correta (verde)
+    for (int i = 0; i < TAMANHO_PALAVRA; i++)
+    {
+        int indice = mapeamentoTeclas[toupper(tentativa[i]) - 'A'];
+        if (tentativa[i] == palavraCerta[i])
+        {
+            aplicarCor(teclas[indice], "#32CD32"); // Verde forte
+            letrasUsadas[i] = 1; // Marca a letra como usada
+        }
+    }
+
+    // Depois, marque as letras que estão na palavra, mas em posições erradas (amarelo)
+    for (int i = 0; i < TAMANHO_PALAVRA; i++)
+    {
+        int indice = mapeamentoTeclas[toupper(tentativa[i]) - 'A'];
+        if (tentativa[i] != palavraCerta[i]) // Ignora as já marcadas como corretas
+        {
+            int achou = 0;
+            for (int j = 0; j < TAMANHO_PALAVRA; j++)
+            {
+                if (tentativa[i] == palavraCerta[j] && !letrasUsadas[j])
+                {
+                    achou = 1;
+                    letrasUsadas[j] = 1; // Marca a letra como usada
+                    break;
+                }
+            }
+            if (achou)
+            {
+                aplicarCor(teclas[indice], "#FFD700"); // Amarelo
+            }
+        }
+    }
+
+    // Por último, marque as letras que não estão na palavra (cinza)
+    for (int i = 0; i < TAMANHO_PALAVRA; i++)
+    {
+        int indice = mapeamentoTeclas[toupper(tentativa[i]) - 'A'];
+        int achou = 0;
+
+        // Verifica se a letra está na palavra certa
+        for (int j = 0; j < TAMANHO_PALAVRA; j++)
+        {
+            if (tentativa[i] == palavraCerta[j])
+            {
+                achou = 1;
+                break;
+            }
+        }
+
+        if (!achou)
+        {
+            aplicarCor(teclas[indice], "#696969"); // Cinza
+        }
+    }
+}
+
 void on_submit_clicked(GtkButton *botao, gpointer entryPtr)
 {
     if (tentativaAtual >= MAX_TENTATIVAS)
@@ -68,6 +166,8 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr)
 
     for (int i = 0; tentativa[i]; i++)
         tentativa[i] = toupper(tentativa[i]);
+
+    atualizarTeclado(tentativa, palavraCerta);
 
     int letrasUsadas[5] = {0};
 
@@ -117,6 +217,20 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr)
             sprintf(mensagem, "A palavra era: %s", palavraCerta);
 
         GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_MODAL, GTK_MESSAGE_INFO, GTK_BUTTONS_OK, "%s", mensagem);
+
+        // Adiciona o estilo CSS ao diálogo
+        GtkCssProvider *css_provider = gtk_css_provider_new();
+        const char *css_data =
+            "dialog { background-color: #222222; color: white; } "
+            "label { color: white; font-weight: bold; font-size: 20px; } "
+            "button { background-color: #222222; color: white; border: 2px solid white; font-size: 15px; }";
+        gtk_css_provider_load_from_data(css_provider, css_data, -1, NULL);
+
+        GtkStyleContext *context = gtk_widget_get_style_context(dialog);
+        gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(css_provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+
+        g_object_unref(css_provider);
+
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
     }
@@ -192,10 +306,9 @@ int main(int argc, char *argv[])
     GtkWidget *botao = gtk_button_new_with_label("Enviar");
     gtk_box_pack_start(GTK_BOX(caixaVertical), botao, FALSE, FALSE, 5);
 
-    // Conecta o botão ao callback
-    g_signal_connect(botao, "clicked", G_CALLBACK(on_submit_clicked), entrada);
+    inicializarTeclado(caixaVertical); // Adiciona o teclado virtual na parte de baixo
 
-    // Conecta o sinal "activate" do GtkEntry ao mesmo callback
+    g_signal_connect(botao, "clicked", G_CALLBACK(on_submit_clicked), entrada);
     g_signal_connect(entrada, "activate", G_CALLBACK(on_submit_clicked), entrada);
 
     gtk_widget_show_all(janela);
