@@ -4,18 +4,21 @@
 #include <time.h>
 #include <ctype.h>
 
+// Define constantes do jogo
 #define MAX_TENTATIVAS 6
 #define TAMANHO_PALAVRA 5
 #define MAX_WORDS 1000
 #define MAX_WORD_LENGTH 100
 
-char palavraCerta[MAX_WORD_LENGTH];
-GtkWidget *grid;
-GtkWidget *tecladoGrid;
-GtkWidget *teclas[26]; // Para armazenar os botões das letras
-int mapeamentoTeclas[26]; // Mapeia letras A-Z para índices no layout QWERTY
-int tentativaAtual = 0;
+// Variáveis globais
+char palavraCerta[MAX_WORD_LENGTH]; // Palavra correta a ser adivinhada
+GtkWidget *grid;                    // Grid principal para as tentativas
+GtkWidget *tecladoGrid;             // Grid do teclado virtual
+GtkWidget *teclas[26];              // Array para armazenar os botões das letras
+int mapeamentoTeclas[26];           // Mapeia letras A-Z para índices no layout QWERTY
+int tentativaAtual = 0;             // Número da tentativa atual
 
+// Carrega as palavras do arquivo de dicionário
 void carregarPalavras(const char *nomeArquivo, char palavras[][MAX_WORD_LENGTH], int *numPalavras)
 {
     FILE *arquivo = fopen(nomeArquivo, "r");
@@ -34,6 +37,7 @@ void carregarPalavras(const char *nomeArquivo, char palavras[][MAX_WORD_LENGTH],
     fclose(arquivo);
 }
 
+// Seleciona uma palavra aleatória do dicionário
 void selecionarPalavraAleatoria(char palavras[][MAX_WORD_LENGTH], int numPalavras, char *palavraSelecionada)
 {
     srand(time(NULL));
@@ -43,6 +47,7 @@ void selecionarPalavraAleatoria(char palavras[][MAX_WORD_LENGTH], int numPalavra
         palavraSelecionada[i] = toupper(palavraSelecionada[i]);
 }
 
+// Aplica uma cor de fundo e texto a um widget usando CSS
 void aplicarCor(GtkWidget *widget, const char *corCSS)
 {
     GtkStyleContext *context = gtk_widget_get_style_context(widget);
@@ -56,6 +61,7 @@ void aplicarCor(GtkWidget *widget, const char *corCSS)
     g_object_unref(provider);
 }
 
+// Inicializa o teclado virtual na interface
 void inicializarTeclado(GtkWidget *caixaVertical)
 {
     tecladoGrid = gtk_grid_new();
@@ -69,7 +75,7 @@ void inicializarTeclado(GtkWidget *caixaVertical)
     for (int i = 0; i < 26; i++)
     {
         char letra[2] = {layout[i], '\0'};
-        GtkWidget *label = gtk_label_new(letra); // Substitui GtkButton por GtkLabel
+        GtkWidget *label = gtk_label_new(letra); // Usa GtkLabel para as teclas
         gtk_widget_set_hexpand(label, TRUE);
         gtk_widget_set_vexpand(label, TRUE);
         gtk_widget_set_halign(label, GTK_ALIGN_CENTER);
@@ -90,11 +96,12 @@ void inicializarTeclado(GtkWidget *caixaVertical)
     }
 }
 
+// Atualiza as cores das teclas do teclado virtual conforme a tentativa
 void atualizarTeclado(const char *tentativa, const char *palavraCerta)
 {
     int letrasUsadas[TAMANHO_PALAVRA] = {0}; // Para rastrear quais letras da palavra certa já foram usadas
 
-    // Primeiro, marque as letras que estão na posição correta (verde)
+    // Primeiro, marca as letras na posição correta (verde)
     for (int i = 0; i < TAMANHO_PALAVRA; i++)
     {
         int indice = mapeamentoTeclas[toupper(tentativa[i]) - 'A'];
@@ -105,7 +112,7 @@ void atualizarTeclado(const char *tentativa, const char *palavraCerta)
         }
     }
 
-    // Depois, marque as letras que estão na palavra, mas em posições erradas (amarelo)
+    // Depois, marca as letras que estão na palavra, mas em posições erradas (amarelo)
     for (int i = 0; i < TAMANHO_PALAVRA; i++)
     {
         int indice = mapeamentoTeclas[toupper(tentativa[i]) - 'A'];
@@ -128,7 +135,7 @@ void atualizarTeclado(const char *tentativa, const char *palavraCerta)
         }
     }
 
-    // Por último, marque as letras que não estão na palavra (cinza)
+    // Por último, marca as letras que não estão na palavra (cinza)
     for (int i = 0; i < TAMANHO_PALAVRA; i++)
     {
         int indice = mapeamentoTeclas[toupper(tentativa[i]) - 'A'];
@@ -151,6 +158,7 @@ void atualizarTeclado(const char *tentativa, const char *palavraCerta)
     }
 }
 
+// Callback do botão "Enviar" e do Enter no campo de entrada
 void on_submit_clicked(GtkButton *botao, gpointer entryPtr)
 {
     if (tentativaAtual >= MAX_TENTATIVAS)
@@ -171,6 +179,7 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr)
 
     int letrasUsadas[5] = {0};
 
+    // Mostra a tentativa na grid principal, colorindo cada letra
     for (int i = 0; i < TAMANHO_PALAVRA; i++)
     {
         GtkWidget *label = gtk_label_new(NULL);
@@ -208,6 +217,7 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr)
 
     gtk_entry_set_text(GTK_ENTRY(entryPtr), "");
 
+    // Verifica se o usuário acertou ou acabou as tentativas
     if (strcmp(tentativa, palavraCerta) == 0 || tentativaAtual == MAX_TENTATIVAS)
     {
         char mensagem[128];
@@ -240,11 +250,13 @@ int main(int argc, char *argv[])
 {
     gtk_init(&argc, &argv);
 
+    // Carrega o dicionário e seleciona a palavra correta
     char palavras[MAX_WORDS][MAX_WORD_LENGTH];
     int numPalavras;
     carregarPalavras("dicionario.txt", palavras, &numPalavras);
     selecionarPalavraAleatoria(palavras, numPalavras, palavraCerta);
 
+    // Cria a janela principal
     GtkWidget *janela = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(janela), "Termo - GTK");
 
@@ -253,6 +265,7 @@ int main(int argc, char *argv[])
     int altura_total = altura_por_tentativa * MAX_TENTATIVAS + 150; // Inclui espaço para entrada e botão
     gtk_window_set_default_size(GTK_WINDOW(janela), 400, altura_total);
 
+    // Centraliza a janela na tela
     GdkDisplay *display = gdk_display_get_default();
     GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
 
@@ -271,9 +284,9 @@ int main(int argc, char *argv[])
         gtk_window_move(GTK_WINDOW(janela), pos_x, pos_y);
     }
 
-    // Define o estilo CSS para fundo roxo, cores mais fortes, letras maiores e padding
+    // Define o estilo CSS para fundo, cores e tamanhos
     const char *css_data =
-        "window { background-color: #222222; color: white; } "                                           // Fundo roxo
+        "window { background-color: #222222; color: white; } "                                           // Fundo escuro
         "label { color: white; font-weight: bold; font-size: 25px; padding: 10px; } "                    // Letras maiores com padding
         "entry { background-color: #222222; color: white; border: 3px solid white; font-size: 25px; } "  // Letras maiores no campo de entrada
         "button { background-color: #222222; color: white; border: 3px solid white; font-size: 25px; }"; // Letras maiores nos botões
@@ -291,23 +304,29 @@ int main(int argc, char *argv[])
 
     g_signal_connect(janela, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
+    // Cria a caixa vertical principal
     GtkWidget *caixaVertical = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_add(GTK_CONTAINER(janela), caixaVertical);
 
+    // Cria a grid para as tentativas
     grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(grid), 5);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 5);
     gtk_box_pack_start(GTK_BOX(caixaVertical), grid, TRUE, TRUE, 5);
 
+    // Campo de entrada para o usuário digitar a palavra
     GtkWidget *entrada = gtk_entry_new();
     gtk_entry_set_max_length(GTK_ENTRY(entrada), TAMANHO_PALAVRA);
     gtk_box_pack_start(GTK_BOX(caixaVertical), entrada, FALSE, FALSE, 5);
 
+    // Botão para enviar a tentativa
     GtkWidget *botao = gtk_button_new_with_label("Enviar");
     gtk_box_pack_start(GTK_BOX(caixaVertical), botao, FALSE, FALSE, 5);
 
-    inicializarTeclado(caixaVertical); // Adiciona o teclado virtual na parte de baixo
+    // Inicializa o teclado virtual
+    inicializarTeclado(caixaVertical);
 
+    // Conecta os sinais dos botões e do campo de entrada
     g_signal_connect(botao, "clicked", G_CALLBACK(on_submit_clicked), entrada);
     g_signal_connect(entrada, "activate", G_CALLBACK(on_submit_clicked), entrada);
 
