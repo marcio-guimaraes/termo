@@ -18,6 +18,10 @@ GtkWidget *teclas[26];              // Array para armazenar os botões das letra
 int mapeamentoTeclas[26];           // Mapeia letras A-Z para índices no layout QWERTY
 int tentativaAtual = 0;             // Número da tentativa atual
 
+// Adicione logo após as variáveis globais e antes de on_submit_clicked:
+
+void mostrarTelaVitoria(GtkWidget *parent);
+
 // Carrega as palavras do arquivo de dicionário
 void carregarPalavras(const char *nomeArquivo, char palavras[][MAX_WORD_LENGTH], int *numPalavras)
 {
@@ -29,10 +33,15 @@ void carregarPalavras(const char *nomeArquivo, char palavras[][MAX_WORD_LENGTH],
     }
 
     *numPalavras = 0;
-    while (*numPalavras < MAX_WORDS && fgets(palavras[*numPalavras], MAX_WORD_LENGTH, arquivo))
+    char buffer[MAX_WORD_LENGTH];
+    while (fgets(buffer, MAX_WORD_LENGTH, arquivo))
     {
-        palavras[*numPalavras][strcspn(palavras[*numPalavras], "\n")] = '\0'; // remove \n
-        (*numPalavras)++;
+        buffer[strcspn(buffer, "\r\n")] = '\0'; // remove \n e \r
+        if (strlen(buffer) == TAMANHO_PALAVRA)  // só aceita palavras com 5 letras
+        {
+            strcpy(palavras[*numPalavras], buffer);
+            (*numPalavras)++;
+        }
     }
     fclose(arquivo);
 }
@@ -43,8 +52,9 @@ void selecionarPalavraAleatoria(char palavras[][MAX_WORD_LENGTH], int numPalavra
     srand(time(NULL));
     int index = rand() % numPalavras;
     strcpy(palavraSelecionada, palavras[index]);
+    // Converte para maiúsculas
     for (int i = 0; palavraSelecionada[i]; i++)
-        palavraSelecionada[i] = toupper(palavraSelecionada[i]);
+        palavraSelecionada[i] = toupper((unsigned char)palavraSelecionada[i]);
 }
 
 // Aplica uma cor de fundo e texto a um widget usando CSS
@@ -108,7 +118,7 @@ void atualizarTeclado(const char *tentativa, const char *palavraCerta)
         if (tentativa[i] == palavraCerta[i])
         {
             aplicarCor(teclas[indice], "#32CD32"); // Verde forte
-            letrasUsadas[i] = 1; // Marca a letra como usada
+            letrasUsadas[i] = 1;                   // Marca a letra como usada
         }
     }
 
@@ -173,7 +183,7 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr)
     tentativa[TAMANHO_PALAVRA] = '\0';
 
     for (int i = 0; tentativa[i]; i++)
-        tentativa[i] = toupper(tentativa[i]);
+        tentativa[i] = toupper((unsigned char)tentativa[i]);
 
     atualizarTeclado(tentativa, palavraCerta);
 
@@ -218,32 +228,38 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr)
     gtk_entry_set_text(GTK_ENTRY(entryPtr), "");
 
     // Verifica se o usuário acertou ou acabou as tentativas
-    if (strcmp(tentativa, palavraCerta) == 0 || tentativaAtual == MAX_TENTATIVAS)
+    if (strcmp(tentativa, palavraCerta) == 0)
+    {
+        mostrarTelaVitoria(gtk_widget_get_toplevel(GTK_WIDGET(botao)));
+    }
+    else if (tentativaAtual == MAX_TENTATIVAS)
     {
         char mensagem[128];
-        if (strcmp(tentativa, palavraCerta) == 0)
-            sprintf(mensagem, "Parabéns! Você acertou!");
-        else
-            sprintf(mensagem, "A palavra era: %s", palavraCerta);
+        sprintf(mensagem, "A palavra era: %s", palavraCerta);
 
-        GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_MODAL, GTK_MESSAGE_INFO, GTK_BUTTONS_OK, "%s", mensagem);
-
-        // Adiciona o estilo CSS ao diálogo
-        GtkCssProvider *css_provider = gtk_css_provider_new();
-        const char *css_data =
-            "dialog { background-color: #222222; color: white; } "
-            "label { color: white; font-weight: bold; font-size: 20px; } "
-            "button { background-color: #222222; color: white; border: 2px solid white; font-size: 15px; }";
-        gtk_css_provider_load_from_data(css_provider, css_data, -1, NULL);
-
-        GtkStyleContext *context = gtk_widget_get_style_context(dialog);
-        gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(css_provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
-
-        g_object_unref(css_provider);
-
+        GtkWidget *dialog = gtk_message_dialog_new(
+            GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(botao))),
+            GTK_DIALOG_MODAL,
+            GTK_MESSAGE_INFO,
+            GTK_BUTTONS_OK,
+            "%s", mensagem);
+        gtk_window_set_title(GTK_WINDOW(dialog), "Fim de Jogo");
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
     }
+}
+
+void mostrarTelaVitoria(GtkWidget *parent)
+{
+    GtkWidget *dialog = gtk_message_dialog_new(
+        GTK_WINDOW(parent),
+        GTK_DIALOG_MODAL,
+        GTK_MESSAGE_INFO,
+        GTK_BUTTONS_OK,
+        "🎉 Parabéns! Você acertou a palavra! 🎉");
+    gtk_window_set_title(GTK_WINDOW(dialog), "Vitória!");
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
 }
 
 int main(int argc, char *argv[])
@@ -254,6 +270,11 @@ int main(int argc, char *argv[])
     char palavras[MAX_WORDS][MAX_WORD_LENGTH];
     int numPalavras;
     carregarPalavras("dicionario.txt", palavras, &numPalavras);
+    if (numPalavras == 0)
+    {
+        fprintf(stderr, "Nenhuma palavra válida encontrada no dicionario.txt!\n");
+        exit(1);
+    }
     selecionarPalavraAleatoria(palavras, numPalavras, palavraCerta);
 
     // Cria a janela principal
