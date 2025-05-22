@@ -190,8 +190,9 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr)
     int letrasUsadas[5] = {0};
 
     // Mostra a tentativa na grid principal, colorindo cada letra
-    for (int i = 0; i < TAMANHO_PALAVRA; i++)
-    {
+    // 1. Marca verdes e registra letras usadas
+    int usadas_palavra[TAMANHO_PALAVRA] = {0};
+    for (int i = 0; i < TAMANHO_PALAVRA; i++) {
         GtkWidget *label = gtk_label_new(NULL);
         char letraStr[2] = {tentativa[i], '\0'};
         gtk_label_set_text(GTK_LABEL(label), letraStr);
@@ -201,25 +202,27 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr)
         gtk_widget_set_valign(label, GTK_ALIGN_CENTER);
         gtk_grid_attach(GTK_GRID(grid), label, i, tentativaAtual, 1, 1);
 
+        if (tentativa[i] == palavraCerta[i]) {
+            aplicarCor(label, "#32CD32"); // Verde
+            usadas_palavra[i] = 1; // Marca como usada
+        }
+    }
+
+    // 2. Marca amarelos e cinzas
+    for (int i = 0; i < TAMANHO_PALAVRA; i++) {
+        GtkWidget *label = gtk_grid_get_child_at(GTK_GRID(grid), i, tentativaAtual);
         if (tentativa[i] == palavraCerta[i])
-        {
-            aplicarCor(label, "#32CD32"); // Verde forte
-            letrasUsadas[i] = 1;
-        }
-        else
-        {
-            int achou = 0;
-            for (int j = 0; j < TAMANHO_PALAVRA; j++)
-            {
-                if (tentativa[i] == palavraCerta[j] && !letrasUsadas[j])
-                {
-                    achou = 1;
-                    letrasUsadas[j] = 1;
-                    break;
-                }
+            continue; // Já foi marcado como verde
+
+        int achou = 0;
+        for (int j = 0; j < TAMANHO_PALAVRA; j++) {
+            if (!usadas_palavra[j] && tentativa[i] == palavraCerta[j]) {
+                achou = 1;
+                usadas_palavra[j] = 1; // Marca como usada
+                break;
             }
-            aplicarCor(label, achou ? "#FFD700" : "#696969"); // Amarelo forte ou cinza escuro
         }
+        aplicarCor(label, achou ? "#FFD700" : "#696969"); // Amarelo ou cinza
     }
 
     gtk_widget_show_all(grid);
