@@ -192,7 +192,8 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr)
     // Mostra a tentativa na grid principal, colorindo cada letra
     // 1. Marca verdes e registra letras usadas
     int usadas_palavra[TAMANHO_PALAVRA] = {0};
-    for (int i = 0; i < TAMANHO_PALAVRA; i++) {
+    for (int i = 0; i < TAMANHO_PALAVRA; i++)
+    {
         GtkWidget *label = gtk_label_new(NULL);
         char letraStr[2] = {tentativa[i], '\0'};
         gtk_label_set_text(GTK_LABEL(label), letraStr);
@@ -202,21 +203,25 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr)
         gtk_widget_set_valign(label, GTK_ALIGN_CENTER);
         gtk_grid_attach(GTK_GRID(grid), label, i, tentativaAtual, 1, 1);
 
-        if (tentativa[i] == palavraCerta[i]) {
+        if (tentativa[i] == palavraCerta[i])
+        {
             aplicarCor(label, "#32CD32"); // Verde
-            usadas_palavra[i] = 1; // Marca como usada
+            usadas_palavra[i] = 1;        // Marca como usada
         }
     }
 
     // 2. Marca amarelos e cinzas
-    for (int i = 0; i < TAMANHO_PALAVRA; i++) {
+    for (int i = 0; i < TAMANHO_PALAVRA; i++)
+    {
         GtkWidget *label = gtk_grid_get_child_at(GTK_GRID(grid), i, tentativaAtual);
         if (tentativa[i] == palavraCerta[i])
             continue; // Já foi marcado como verde
 
         int achou = 0;
-        for (int j = 0; j < TAMANHO_PALAVRA; j++) {
-            if (!usadas_palavra[j] && tentativa[i] == palavraCerta[j]) {
+        for (int j = 0; j < TAMANHO_PALAVRA; j++)
+        {
+            if (!usadas_palavra[j] && tentativa[i] == palavraCerta[j])
+            {
                 achou = 1;
                 usadas_palavra[j] = 1; // Marca como usada
                 break;
@@ -247,6 +252,17 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr)
             GTK_BUTTONS_OK,
             "%s", mensagem);
         gtk_window_set_title(GTK_WINDOW(dialog), "Fim de Jogo");
+
+        // Aplica CSS para fundo preto e texto branco no diálogo
+        GtkCssProvider *provider = gtk_css_provider_new();
+        gtk_css_provider_load_from_data(provider,
+                                        "* { background-color: #000000; color: white; }", -1, NULL);
+        GtkStyleContext *context = gtk_widget_get_style_context(dialog);
+        gtk_style_context_add_provider(context,
+                                       GTK_STYLE_PROVIDER(provider),
+                                       GTK_STYLE_PROVIDER_PRIORITY_USER);
+        g_object_unref(provider);
+
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
     }
@@ -259,7 +275,7 @@ void mostrarTelaVitoria(GtkWidget *parent)
         GTK_DIALOG_MODAL,
         GTK_MESSAGE_INFO,
         GTK_BUTTONS_OK,
-        "🎉 Parabéns! Você acertou a palavra! 🎉");
+        "Parabéns! Você acertou a palavra!");
     gtk_window_set_title(GTK_WINDOW(dialog), "Vitória!");
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
@@ -310,15 +326,15 @@ int main(int argc, char *argv[])
 
     // Define o estilo CSS para fundo, cores e tamanhos
     const char *css_data =
-        "window { background-color: #222222; color: white; } "                                           // Fundo escuro
-        "label { color: white; font-weight: bold; font-size: 25px; padding: 10px; } "                    // Letras maiores com padding
-        "entry { background-color: #222222; color: white; border: 3px solid white; font-size: 25px; } "  // Letras maiores no campo de entrada
-        "button { background-color: #222222; color: white; border: 3px solid white; font-size: 25px; }"; // Letras maiores nos botões
+        "* { background-color: #000000; color: white; } "                                               // Fundo preto, texto branco
+        "label { color: white; font-weight: bold; font-size: 25px; padding: 10px; } "                   // Letras maiores com padding
+        "entry { background-color: #000000; color: white; border: 3px solid white; font-size: 25px; } " // Campo de entrada preto
+        "button { background-color: #222222; color: white; border: 3px solid white; font-size: 25px; }" // Botões escuros
+        "GtkWindow { background-color: #000000; }";                                                     // Janela principal preta
 
     GtkCssProvider *css_provider = gtk_css_provider_new();
     gtk_css_provider_load_from_data(css_provider, css_data, -1, NULL);
 
-    GtkStyleContext *context = gtk_widget_get_style_context(janela);
     gtk_style_context_add_provider_for_screen(
         gdk_screen_get_default(),
         GTK_STYLE_PROVIDER(css_provider),
