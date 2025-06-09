@@ -18,8 +18,6 @@ GtkWidget *teclas[26];              // Array para armazenar os botões das letra
 int mapeamentoTeclas[26];           // Mapeia letras A-Z para índices no layout QWERTY
 int tentativaAtual = 0;             // Número da tentativa atual
 
-// Adicione logo após as variáveis globais e antes de on_submit_clicked:
-
 void mostrarTelaVitoria(GtkWidget *parent);
 
 // Carrega as palavras do arquivo de dicionário
@@ -279,9 +277,12 @@ void mostrarTelaVitoria(GtkWidget *parent)
     gtk_window_set_title(GTK_WINDOW(dialog), "Vitória!");
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
+
+    // Fecha a janela do jogo e volta ao menu
+    gtk_window_close(GTK_WINDOW(parent));
 }
 
-int main(int argc, char *argv[])
+void iniciar_jogo_termo(int argc, char *argv[])
 {
     gtk_init(&argc, &argv);
 
@@ -372,5 +373,4 @@ int main(int argc, char *argv[])
 
     gtk_widget_show_all(janela);
     gtk_main();
-    return 0;
 }
