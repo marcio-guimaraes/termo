@@ -40,18 +40,18 @@ sudo apt-get install libgtk-3-dev
 
 1. Clone este repositório:
    ```bash
-   git clone https://github.com/seu-usuario/termo.git
+   git clone https://github.com/marcio-guimaraes/termo.git
    cd termo
    ```
 
 2. Compile o código:
    ```bash
-   gcc -o termo termo.c `pkg-config --cflags --libs gtk+-3.0`
+   gcc main.c termo.c -o game `pkg-config --cflags --libs gtk+-3.0`
    ```
 
 3. Execute o jogo:
    ```bash
-   ./termo
+   ./game
    ```
 
 ---
