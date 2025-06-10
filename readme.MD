@@ -40,7 +40,7 @@ sudo apt-get install libgtk-3-dev
 
 1. Clone este repositório:
    ```bash
-   git clone https://github.com/marcio-guimaraes/termo.git
+   git clone https://github.com/marcio-guimaraes/termoo.git
    cd termo
    ```
 
