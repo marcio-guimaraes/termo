@@ -331,14 +331,14 @@ void iniciar_jogo_termo(int argc, char *argv[])
     }
 
     // Define o estilo CSS para fundo, cores e tamanhos
-    const char *css_data =
-        "* { background-color: #000000; color: white; } "                                               // Fundo preto, texto branco
-        "label { color: white; font-weight: bold; font-size: 25px; padding: 10px; } "                   // Letras maiores com padding
-        "entry { background-color: #000000; color: white; border: 3px solid white; font-size: 25px; } " // Campo de entrada preto
-        "button { background-color: #222222; color: white; border: 3px solid white; font-size: 25px; }" // Botões escuros
-        "GtkWindow { background-color: #000000; }";                                                     // Janela principal preta
+   const char *css_data =
+    "* { color: #222222; } "
+    "label { color: #222222; font-weight: bold; font-size: 25px; padding: 10px; } "
+    "entry { background-color: #FFFFFF; color: #222222; border: 3px solid #222222; font-size: 25px; } "
+    "button { background-color: #EEEEEE; color: #222222; border: 3px solid #222222; font-size: 25px; }"
+    "GtkWindow { background-color: #df1313; }";
 
-    GtkCssProvider *css_provider = gtk_css_provider_new();
+GtkCssProvider *css_provider = gtk_css_provider_new();  // Declaração separada
     gtk_css_provider_load_from_data(css_provider, css_data, -1, NULL);
 
     gtk_style_context_add_provider_for_screen(
