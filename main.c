@@ -3,16 +3,32 @@
 // Declare a função do termo.c
 void iniciar_jogo_termo(int argc, char *argv[]);
 
+// Função para aplicar o estilo global
+void aplicarEstiloGlobal() {
+    GtkCssProvider *provider = gtk_css_provider_new();
+    const char *css_data =
+        "* { color: #222222; } "
+        "label { color: #222222; font-weight: bold; font-size: 25px; padding: 10px; } "
+        "entry { background-color: #FFFFFF; color: #222222; border: 3px solid #222222; font-size: 25px; } "
+        "button { background-color: #EEEEEE; color: #222222; border: 3px solid #222222; font-size: 25px; }"
+        "GtkWindow { background-color: #df1313; }";
+    
+    gtk_css_provider_load_from_data(provider, css_data, -1, NULL);
+    gtk_style_context_add_provider_for_screen(
+        gdk_screen_get_default(),
+        GTK_STYLE_PROVIDER(provider),
+        GTK_STYLE_PROVIDER_PRIORITY_USER);
+    g_object_unref(provider);
+}
+
 // Funções de callback para os botões
-void on_jogar_clicked(GtkButton *button, gpointer user_data)
-{
+void on_jogar_clicked(GtkButton *button, gpointer user_data) {
     gtk_widget_hide(GTK_WIDGET(user_data)); // Esconde o menu
     iniciar_jogo_termo(0, NULL);            // Inicia o jogo
     gtk_widget_show(GTK_WIDGET(user_data)); // Mostra o menu ao sair do jogo
 }
 
-void on_descricao_clicked(GtkButton *button, gpointer user_data)
-{
+void on_descricao_clicked(GtkButton *button, gpointer user_data) {
     GtkWidget *dialog = gtk_message_dialog_new(
         GTK_WINDOW(user_data),
         GTK_DIALOG_MODAL,
@@ -35,8 +51,7 @@ void on_descricao_clicked(GtkButton *button, gpointer user_data)
     gtk_widget_destroy(dialog);
 }
 
-void on_creditos_clicked(GtkButton *button, gpointer user_data)
-{
+void on_creditos_clicked(GtkButton *button, gpointer user_data) {
     GtkWidget *dialog = gtk_message_dialog_new(
         GTK_WINDOW(user_data),
         GTK_DIALOG_MODAL,
@@ -48,14 +63,15 @@ void on_creditos_clicked(GtkButton *button, gpointer user_data)
     gtk_widget_destroy(dialog);
 }
 
-void on_sair_clicked(GtkButton *button, gpointer user_data)
-{
+void on_sair_clicked(GtkButton *button, gpointer user_data) {
     gtk_window_close(GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(button))));
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
+
+    // Aplica o estilo global antes de criar qualquer janela
+    aplicarEstiloGlobal();
 
     GtkWidget *janela = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(janela), "Menu - Termo");

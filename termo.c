@@ -311,6 +311,10 @@ void iniciar_jogo_termo(int argc, char *argv[])
     int altura_total = altura_por_tentativa * MAX_TENTATIVAS + 150; // Inclui espaço para entrada e botão
     gtk_window_set_default_size(GTK_WINDOW(janela), 400, altura_total);
 
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!gtk_window_fullscreen(GTK_WINDOW(janela)); → NÂO USAR!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     // Centraliza a janela na tela
     GdkDisplay *display = gdk_display_get_default();
     GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
@@ -324,18 +328,19 @@ void iniciar_jogo_termo(int argc, char *argv[])
         int screen_height = geometry.height;
 
         // Calcula as coordenadas para centralizar horizontalmente e posicionar um pouco acima verticalmente
-        int pos_x = (screen_width - 400) / 2;  // 400 é a largura da janela
-        int pos_y = (screen_height - 400) / 3; // 400 é a altura da janela, ajustado para ficar acima
+        int pos_x = (screen_width - 400) / 2;
+        int pos_y = (screen_height - altura_total) / 2 - 50;
 
         gtk_window_move(GTK_WINDOW(janela), pos_x, pos_y);
+
     }
 
     // Define o estilo CSS para fundo, cores e tamanhos
    const char *css_data =
     "* { color: #222222; } "
-    "label { color: #222222; font-weight: bold; font-size: 25px; padding: 10px; } "
-    "entry { background-color: #FFFFFF; color: #222222; border: 3px solid #222222; font-size: 25px; } "
-    "button { background-color: #EEEEEE; color: #222222; border: 3px solid #222222; font-size: 25px; }"
+    "label { color: #222222; font-weight: bold; font-size: 25px; padding: 10px; font-family: monospace; } "
+    "entry { background-color: #FFFFFF; color: #222222; border: 3px solid #222222; font-size: 25px; font-family: monospace; } "
+    "button { background-color: #EEEEEE; color: #222222; border: 3px solid #222222; font-size: 25px; font-family: monospace; }"
     "GtkWindow { background-color: #df1313; }";
 
 GtkCssProvider *css_provider = gtk_css_provider_new();  // Declaração separada
