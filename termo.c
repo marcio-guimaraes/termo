@@ -263,6 +263,9 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr)
 
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
+
+        // Fecha a janela do jogo e volta ao menu
+        gtk_window_close(GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(botao))));
     }
 }
 
@@ -284,6 +287,8 @@ void mostrarTelaVitoria(GtkWidget *parent)
 
 void iniciar_jogo_termo(int argc, char *argv[])
 {
+    tentativaAtual = 0; // Reinicia as tentativas
+
     gtk_init(&argc, &argv);
 
     // Carrega o dicionário e seleciona a palavra correta

@@ -42,7 +42,7 @@ void on_creditos_clicked(GtkButton *button, gpointer user_data)
         GTK_DIALOG_MODAL,
         GTK_MESSAGE_INFO,
         GTK_BUTTONS_OK,
-        "Termo GTK\nDesenvolvido por Márcio Guimarães");
+        "\nDesenvolvido por Márcio Guimarães");
     gtk_window_set_title(GTK_WINDOW(dialog), "Créditos");
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
@@ -50,7 +50,7 @@ void on_creditos_clicked(GtkButton *button, gpointer user_data)
 
 void on_sair_clicked(GtkButton *button, gpointer user_data)
 {
-    gtk_window_close(GTK_WINDOW(user_data));
+    gtk_window_close(GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(button))));
 }
 
 int main(int argc, char *argv[])
@@ -87,6 +87,5 @@ int main(int argc, char *argv[])
 
     gtk_widget_show_all(janela);
     gtk_main();
-
     return 0;
 }
