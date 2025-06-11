@@ -46,7 +46,7 @@ sudo apt-get install libgtk-3-dev
 
 2. Compile o código:
    ```bash
-   gcc main.c termo.c -o game `pkg-config --cflags --libs gtk+-3.0`
+   gcc main.c termo.c -o game `pkg-config --cflags --libs gtk+-3.0` -lm
    ```
 
 3. Execute o jogo:
