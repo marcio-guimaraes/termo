@@ -251,14 +251,14 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr)
             "%s", mensagem);
         gtk_window_set_title(GTK_WINDOW(dialog), "Fim de Jogo");
 
-        // Aplica CSS para fundo preto e texto branco no diálogo
+        // Aplica CSS para fundo branco e texto escuro no diálogo
         GtkCssProvider *provider = gtk_css_provider_new();
         gtk_css_provider_load_from_data(provider,
-                                        "* { background-color: #000000; color: white; }", -1, NULL);
+            "* { background-color: #FFFFFF; color: #222222; }", -1, NULL);
         GtkStyleContext *context = gtk_widget_get_style_context(dialog);
         gtk_style_context_add_provider(context,
-                                       GTK_STYLE_PROVIDER(provider),
-                                       GTK_STYLE_PROVIDER_PRIORITY_USER);
+            GTK_STYLE_PROVIDER(provider),
+            GTK_STYLE_PROVIDER_PRIORITY_USER);
         g_object_unref(provider);
 
         gtk_dialog_run(GTK_DIALOG(dialog));
@@ -278,6 +278,17 @@ void mostrarTelaVitoria(GtkWidget *parent)
         GTK_BUTTONS_OK,
         "Parabéns! Você acertou a palavra!");
     gtk_window_set_title(GTK_WINDOW(dialog), "Vitória!");
+
+    // Aplica CSS para fundo branco e texto escuro no diálogo
+    GtkCssProvider *provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(provider,
+        "* { background-color: #FFFFFF; color: #222222; }", -1, NULL);
+    GtkStyleContext *context = gtk_widget_get_style_context(dialog);
+    gtk_style_context_add_provider(context,
+        GTK_STYLE_PROVIDER(provider),
+        GTK_STYLE_PROVIDER_PRIORITY_USER);
+    g_object_unref(provider);
+
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
 
