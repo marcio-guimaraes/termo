@@ -15,6 +15,7 @@ char palavraCerta[MAX_WORD_LENGTH]; // Palavra correta a ser adivinhada
 GtkWidget *grid;                    // Grid principal para as tentativas
 GtkWidget *tecladoGrid;             // Grid do teclado virtual
 GtkWidget *teclas[26];              // Array para armazenar os botões das letras
+GtkWidget *labelTentativas;         // <-- 1. DECLARAÇÃO DO NOVO LABEL
 int mapeamentoTeclas[26];           // Mapeia letras A-Z para índices no layout QWERTY
 int tentativaAtual = 0;             // Número da tentativa atual
 
@@ -231,6 +232,13 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr)
     gtk_widget_show_all(grid);
     tentativaAtual++;
 
+    // <-- 3. ATUALIZAÇÃO DO LABEL A CADA TENTATIVA
+    char texto_tentativas[50];
+    int tentativas_restantes = MAX_TENTATIVAS - tentativaAtual;
+    sprintf(texto_tentativas, "Tentativas restantes: %d", tentativas_restantes);
+    gtk_label_set_text(GTK_LABEL(labelTentativas), texto_tentativas);
+    // Fim da atualização
+
     gtk_entry_set_text(GTK_ENTRY(entryPtr), "");
 
     // Verifica se o usuário acertou ou acabou as tentativas
@@ -319,32 +327,12 @@ void iniciar_jogo_termo(int argc, char *argv[])
 
     // Ajusta a altura da janela para caber 6 tentativas
     int altura_por_tentativa = 60;                                  // Altura aproximada para cada linha de tentativa
-    int altura_total = altura_por_tentativa * MAX_TENTATIVAS + 150; // Inclui espaço para entrada e botão
+    int altura_total = altura_por_tentativa * MAX_TENTATIVAS + 200; // Aumentei para caber o novo label
     gtk_window_set_default_size(GTK_WINDOW(janela), 400, altura_total);
 
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // !!!!!!!!!!!!!!!!!!!!!!!!!gtk_window_fullscreen(GTK_WINDOW(janela)); → NÂO USAR!!!!!!!!!!!!!!!!!!!!!!!!!
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // Centraliza a janela
+    gtk_window_set_position(GTK_WINDOW(janela), GTK_WIN_POS_CENTER);
 
-    // Centraliza a janela na tela
-    GdkDisplay *display = gdk_display_get_default();
-    GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
-
-    if (monitor)
-    {
-        GdkRectangle geometry;
-        gdk_monitor_get_geometry(monitor, &geometry);
-
-        int screen_width = geometry.width;
-        int screen_height = geometry.height;
-
-        // Calcula as coordenadas para centralizar horizontalmente e posicionar um pouco acima verticalmente
-        int pos_x = (screen_width - 400) / 2;
-        int pos_y = (screen_height - altura_total) / 2 - 50;
-
-        gtk_window_move(GTK_WINDOW(janela), pos_x, pos_y);
-
-    }
 
     // Define o estilo CSS para fundo, cores e tamanhos
    const char *css_data =
@@ -354,7 +342,7 @@ void iniciar_jogo_termo(int argc, char *argv[])
     "button { background-color: #EEEEEE; color: #222222; border: 3px solid #222222; font-size: 25px; font-family: monospace; }"
     "GtkWindow { background-color: #df1313; }";
 
-GtkCssProvider *css_provider = gtk_css_provider_new();  // Declaração separada
+GtkCssProvider *css_provider = gtk_css_provider_new();
     gtk_css_provider_load_from_data(css_provider, css_data, -1, NULL);
 
     gtk_style_context_add_provider_for_screen(
@@ -369,6 +357,15 @@ GtkCssProvider *css_provider = gtk_css_provider_new();  // Declaração separada
     // Cria a caixa vertical principal
     GtkWidget *caixaVertical = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_add(GTK_CONTAINER(janela), caixaVertical);
+    
+    // <-- 2. CRIAÇÃO E POSICIONAMENTO DO LABEL
+    labelTentativas = gtk_label_new(NULL);
+    char texto_inicial[50];
+    sprintf(texto_inicial, "Tentativas restantes: %d", MAX_TENTATIVAS);
+    gtk_label_set_text(GTK_LABEL(labelTentativas), texto_inicial);
+    gtk_box_pack_start(GTK_BOX(caixaVertical), labelTentativas, FALSE, FALSE, 5);
+    // Fim da criação
+
 
     // Cria a grid para as tentativas
     grid = gtk_grid_new();
