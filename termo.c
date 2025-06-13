@@ -303,10 +303,10 @@ void iniciar_jogo_termo(int argc, char *argv[])
     tentativaAtual = 0;
     gtk_init(&argc, &argv);
 
-    carregarPalavras("dicionario.txt", palavras_sorteio, &numPalavras_sorteio);
+    carregarPalavras("palavras.txt", palavras_sorteio, &numPalavras_sorteio);
     if (numPalavras_sorteio == 0) { exit(1); }
     
-    carregarPalavras("palavras_existentes.txt", palavras_existentes, &numPalavras_existentes);
+    carregarPalavras("palavras.txt", palavras_existentes, &numPalavras_existentes);
     if (numPalavras_existentes == 0) { exit(1); }
 
     selecionarPalavraAleatoria(palavras_sorteio, numPalavras_sorteio, palavraCerta);

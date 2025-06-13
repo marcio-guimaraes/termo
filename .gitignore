@@ -3,3 +3,5 @@ output/
 filtro.py
 ordena.py
 game
+limpar_arquivo.py
+retira_duplicata.py
