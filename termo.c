@@ -9,7 +9,7 @@
 #define MAX_TENTATIVAS 6
 #define TAMANHO_PALAVRA 5
 #define MAX_WORD_LENGTH 100
-#define MAX_WORDS_SORTEIO 1000
+#define MAX_WORDS_SORTEIO 10000
 #define MAX_WORDS_VALIDACAO 30000
 
 // --- Variáveis Globais ---
@@ -31,13 +31,14 @@ int numPalavras_existentes;
 void mostrarTelaVitoria(GtkWidget *parent);
 void iniciar_jogo_termo(int argc, char *argv[]);
 
-// --- Funções Auxiliares ---
-
+// --- FUNÇÕES AUXILIARES ---
+// --- Função auxiliar: limpa mensagem de erro após timeout ---
 gboolean limpar_label_mensagem(gpointer data) {
     gtk_label_set_text(GTK_LABEL(data), "");
     return G_SOURCE_REMOVE;
 }
 
+// --- Função auxiliar: normaliza e converte uma palavra para maiúsculas ---
 void normalizar_palavra(const char *input, char *output) {
     gchar *normalized_string = g_utf8_normalize(input, -1, G_NORMALIZE_NFD);
     gchar *out_ptr = output;
@@ -54,6 +55,7 @@ void normalizar_palavra(const char *input, char *output) {
     g_free(normalized_string);
 }
 
+// --- Função auxiliar: valida se a palavra tentada existe no dicionário ---
 const char* validar_e_corrigir_palavra(const char *tentativa_normalizada) {
     char palavra_dicionario_normalizada[MAX_WORD_LENGTH];
     for (int i = 0; i < numPalavras_existentes; i++) {
@@ -65,6 +67,7 @@ const char* validar_e_corrigir_palavra(const char *tentativa_normalizada) {
     return NULL;
 }
 
+// --- Carrega o arquivo com as palavras (sorteio e validação) ---
 void carregarPalavras(const char *nomeArquivo, char palavras_array[][MAX_WORD_LENGTH], int *numPalavras_ptr) {
     FILE *arquivo = fopen(nomeArquivo, "r");
     if (!arquivo) {
@@ -84,12 +87,15 @@ void carregarPalavras(const char *nomeArquivo, char palavras_array[][MAX_WORD_LE
     fclose(arquivo);
 }
 
+// --- Sorteia uma palavra aleatória ---
 void selecionarPalavraAleatoria(char palavras_param[][MAX_WORD_LENGTH], int numPalavras_param, char *palavraSelecionada) {
     srand(time(NULL));
     int index = rand() % numPalavras_param;
     strcpy(palavraSelecionada, palavras_param[index]);
 }
 
+
+// --- Aplica cor em um widget via CSS ---
 void aplicarCor(GtkWidget *widget, const char *corCSS) {
     GtkStyleContext *context = gtk_widget_get_style_context(widget);
     GtkCssProvider *provider = gtk_css_provider_new();
@@ -100,6 +106,7 @@ void aplicarCor(GtkWidget *widget, const char *corCSS) {
     g_object_unref(provider);
 }
 
+// --- Inicializa o teclado virtual ---
 void inicializarTeclado(GtkWidget *caixaVertical) {
     tecladoGrid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(tecladoGrid), 5);
@@ -127,12 +134,14 @@ void inicializarTeclado(GtkWidget *caixaVertical) {
     }
 }
 
+// --- Atualiza as cores do teclado após tentativa ---
 void atualizarTeclado(const char *palavra_tentada, const char *palavra_certa_real) {
     char tentada_norm[MAX_WORD_LENGTH], certa_norm[MAX_WORD_LENGTH];
     normalizar_palavra(palavra_tentada, tentada_norm);
     normalizar_palavra(palavra_certa_real, certa_norm);
     int letrasUsadas[TAMANHO_PALAVRA] = {0};
 
+    // Letras corretas (verde)
     for (int i = 0; i < TAMANHO_PALAVRA; i++) {
         if (tentada_norm[i] == certa_norm[i]) {
             int indice = mapeamentoTeclas[tentada_norm[i] - 'A'];
@@ -140,6 +149,8 @@ void atualizarTeclado(const char *palavra_tentada, const char *palavra_certa_rea
             letrasUsadas[i] = 1;
         }
     }
+
+    // Letras existentes em posição errada (amarelo)
     for (int i = 0; i < TAMANHO_PALAVRA; i++) {
         if (tentada_norm[i] != certa_norm[i]) {
             int achou = 0;
@@ -156,6 +167,8 @@ void atualizarTeclado(const char *palavra_tentada, const char *palavra_certa_rea
             }
         }
     }
+
+    // Letras inexistentes (cinza)
     for (int i = 0; i < TAMANHO_PALAVRA; i++) {
         int achou = 0;
         for (int j = 0; j < TAMANHO_PALAVRA; j++) {
@@ -171,6 +184,7 @@ void atualizarTeclado(const char *palavra_tentada, const char *palavra_certa_rea
     }
 }
 
+// --- Lógica de processamento ao enviar tentativa ---
 void on_submit_clicked(GtkButton *botao, gpointer entryPtr) {
     if (tentativaAtual >= MAX_TENTATIVAS) return;
 
@@ -231,12 +245,10 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr) {
 
     tentativaAtual++;
     
-    // --- LINHA CORRIGIDA ---
     char texto_tentativas[50];
     int tentativas_restantes = MAX_TENTATIVAS - tentativaAtual;
     snprintf(texto_tentativas, sizeof(texto_tentativas), "Tentativas restantes: %d", tentativas_restantes);
     gtk_label_set_text(GTK_LABEL(labelTentativas), texto_tentativas);
-    // --- FIM DA CORREÇÃO ---
 
     gtk_entry_set_text(GTK_ENTRY(entryPtr), "");
 
@@ -253,6 +265,7 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr) {
     }
 }
 
+// --- Exibe tela de vitória ---
 void mostrarTelaVitoria(GtkWidget *parent) {
     char mensagem[256];
     snprintf(mensagem, sizeof(mensagem), "Parabéns, você acertou!\n\nA palavra era: %s", palavraCerta);
@@ -263,10 +276,12 @@ void mostrarTelaVitoria(GtkWidget *parent) {
     gtk_window_close(GTK_WINDOW(parent));
 }
 
+// --- Função principal do jogo ---
 void iniciar_jogo_termo(int argc, char *argv[]) {
     tentativaAtual = 0;
     gtk_init(&argc, &argv);
 
+     // Carregamento de dicionário de palavras
     carregarPalavras("palavras.txt", palavras_sorteio, &numPalavras_sorteio);
     if (numPalavras_sorteio == 0) { exit(1); }
     
@@ -275,6 +290,7 @@ void iniciar_jogo_termo(int argc, char *argv[]) {
 
     selecionarPalavraAleatoria(palavras_sorteio, numPalavras_sorteio, palavraCerta);
 
+    // Construção da interface GTK
     GtkWidget *janela = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(janela), "Termo - GTK");
     gtk_window_set_default_size(GTK_WINDOW(janela), 400, 700);
@@ -295,9 +311,11 @@ void iniciar_jogo_termo(int argc, char *argv[]) {
 
     g_signal_connect(janela, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
+    // Layout principal
     GtkWidget *caixaVertical = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_add(GTK_CONTAINER(janela), caixaVertical);
 
+    // Label de tentativas
     labelTentativas = gtk_label_new(NULL);
     gtk_widget_set_name(labelTentativas, "tentativas");
     char texto_inicial[50];
@@ -305,15 +323,18 @@ void iniciar_jogo_termo(int argc, char *argv[]) {
     gtk_label_set_text(GTK_LABEL(labelTentativas), texto_inicial);
     gtk_box_pack_start(GTK_BOX(caixaVertical), labelTentativas, FALSE, FALSE, 5);
     
+    // Label de mensagens de erro
     labelMensagem = gtk_label_new("");
     gtk_widget_set_name(labelMensagem, "mensagem");
     gtk_box_pack_start(GTK_BOX(caixaVertical), labelMensagem, FALSE, FALSE, 5);
 
+    // Grid das letras
     grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(grid), 5);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 5);
     gtk_box_pack_start(GTK_BOX(caixaVertical), grid, TRUE, TRUE, 5);
 
+    // Cria os tiles (labels) de cada tentativa/letra
     for (int i = 0; i < MAX_TENTATIVAS; i++) {
         for (int j = 0; j < TAMANHO_PALAVRA; j++) {
             GtkWidget *label = gtk_label_new("");
@@ -328,6 +349,7 @@ void iniciar_jogo_termo(int argc, char *argv[]) {
         }
     }
 
+    // Campo de entrada
     GtkWidget *entrada = gtk_entry_new();
     gtk_entry_set_max_length(GTK_ENTRY(entrada), 0);
     gtk_entry_set_alignment(GTK_ENTRY(entrada), 0.5);
