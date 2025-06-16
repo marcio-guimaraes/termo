@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 
-#define MAX_WORDS 1000
+#define MAX_WORDS 15000
 #define MAX_WORD_LENGTH 100
 
 // Função para carregar palavras de um arquivo
