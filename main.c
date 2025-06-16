@@ -1,9 +1,9 @@
 #include <gtk/gtk.h>
 
-// Declare a função do termo.c
+// Declara a função do termo.c para ser usada aqui
 void iniciar_jogo_termo(int argc, char *argv[]);
 
-// Função para aplicar o estilo global
+// Função para aplicar o estilo CSS global à aplicação
 void aplicarEstiloGlobal() {
     GtkCssProvider *provider = gtk_css_provider_new();
     const char *css_data =
@@ -21,31 +21,40 @@ void aplicarEstiloGlobal() {
     g_object_unref(provider);
 }
 
-// Funções de callback para os botões
+// Funções de callback para os botões do menu
 void on_jogar_clicked(GtkButton *button, gpointer user_data) {
-    gtk_widget_hide(GTK_WIDGET(user_data)); // Esconde o menu
-    iniciar_jogo_termo(0, NULL);            // Inicia o jogo
-    gtk_widget_show(GTK_WIDGET(user_data)); // Mostra o menu ao sair do jogo
+    gtk_widget_hide(GTK_WIDGET(user_data)); // Esconde a janela do menu
+    iniciar_jogo_termo(0, NULL);            // Inicia a lógica do jogo
+    gtk_widget_show(GTK_WIDGET(user_data)); // Mostra o menu novamente quando o jogo termina
 }
 
 void on_descricao_clicked(GtkButton *button, gpointer user_data) {
-    GtkWidget *dialog = gtk_message_dialog_new(
+    // Usamos 'gtk_message_dialog_new_with_markup' para permitir a formatação do texto.
+    GtkWidget *dialog = gtk_message_dialog_new_with_markup(
         GTK_WINDOW(user_data),
         GTK_DIALOG_MODAL,
         GTK_MESSAGE_INFO,
         GTK_BUTTONS_OK,
-        "Descubra a palavra secreta em até 6 tentativas!\n"
-        "\n"
-        "Regras:\n"
-        "- Digite uma palavra de 5 letras por tentativa.\n"
-        "- Só são aceitas palavras válidas do dicionário.\n"
-        "- Após cada tentativa, as letras mudam de cor:\n"
-        "   • Verde: a letra está na posição correta.\n"
-        "   • Amarelo: a letra existe na palavra, mas em outra posição.\n"
-        "   • Cinza: a letra não existe na palavra.\n"
-        "- Use as dicas de cores para adivinhar a palavra certa!\n"
-        "\n"
-        "Boa sorte!");
+        "Descubra a palavra secreta em até 6 tentativas!");
+
+    // Montamos o texto secundário com a formatação Pango.
+    // As cores são as mesmas usadas no jogo em termo.c
+    const char *secondary_text =
+        "\n<b>Regras:</b>\n"
+        "Após cada tentativa, as letras mudam de cor:\n\n"
+        "   <span weight='bold' font_family='monospace' background='#32CD32' foreground='white'> C </span>  A letra está no lugar certo.\n\n"
+        "   <span weight='bold' font_family='monospace' background='#FFD700' foreground='white'> A </span>  A letra existe na palavra, mas no lugar errado.\n\n"
+        "   <span weight='bold' font_family='monospace' background='#696969' foreground='white'> S </span>  A letra não existe na palavra.\n\n"
+        "<b>Exemplo:</b>\n"
+        "Palavra secreta: 'PORTA', tentativa: 'TORRE'\n\n"
+        "   <span weight='bold' font_family='monospace' background='#FFD700' foreground='white'> T </span> "
+        "<span weight='bold' font_family='monospace' background='#32CD32' foreground='white'> O </span> "
+        "<span weight='bold' font_family='monospace' background='#32CD32' foreground='white'> R </span> "
+        "<span weight='bold' font_family='monospace' background='#696969' foreground='white'> R </span> "
+        "<span weight='bold' font_family='monospace' background='#696969' foreground='white'> E </span> "
+        "\n\nBoa sorte!";
+
+    gtk_message_dialog_format_secondary_markup(GTK_MESSAGE_DIALOG(dialog), "%s", secondary_text);
     gtk_window_set_title(GTK_WINDOW(dialog), "Descrição do Jogo");
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
@@ -93,7 +102,7 @@ int main(int argc, char *argv[]) {
 
     gtk_container_add(GTK_CONTAINER(janela), caixa);
 
-    // Conecta os sinais dos botões
+    // Conecta os sinais dos botões às suas respectivas funções
     g_signal_connect(btn_jogar, "clicked", G_CALLBACK(on_jogar_clicked), janela);
     g_signal_connect(btn_descricao, "clicked", G_CALLBACK(on_descricao_clicked), janela);
     g_signal_connect(btn_creditos, "clicked", G_CALLBACK(on_creditos_clicked), janela);
