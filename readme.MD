@@ -29,9 +29,14 @@ Certifique-se de ter os seguintes itens instalados no seu sistema:
 - **GTK 3** ou superior.
 - Compilador **GCC** ou equivalente.
 
-No Ubuntu/Debian, você pode instalar o GTK com:
+No Linux, você pode instalar o GTK com:
+Para distribuições que utilizam o gerenciador de pacotes apt (como Ubuntu, Debian, Mint)
 ```bash
 sudo apt-get install libgtk-3-dev
+```
+Para distribuições que utilizam o gerenciador de pacotes dnf (como Fedora, Red Hat, Oracle)
+```
+sudo dnf install gtk3-devel
 ```
 
 ---
@@ -40,7 +45,7 @@ sudo apt-get install libgtk-3-dev
 
 1. Clone este repositório:
    ```bash
-   git clone https://github.com/marcio-guimaraes/termoo.git
+   git clone https://github.com/marcio-guimaraes/termo.git
    cd termo
    ```
 
@@ -71,8 +76,8 @@ sudo apt-get install libgtk-3-dev
 ## 🖌️ Personalização
 
 ### Alterar o Dicionário de Palavras
-O jogo utiliza um arquivo chamado `dicionario.txt` para carregar as palavras. Para personalizar o dicionário:
-1. Substitua o conteúdo do arquivo `dicionario.txt` por palavras de sua escolha.
+O jogo utiliza um arquivo chamado `palavras.txt` para carregar as palavras. Para personalizar o dicionário:
+1. Substitua o conteúdo do arquivo `palavras.txt` por palavras de sua escolha.
 2. Certifique-se de que cada palavra tenha exatamente 5 letras e esteja em uma linha separada.
 
 ---
@@ -88,8 +93,3 @@ Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar
 Este projeto está licenciado sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 ---
-
-## ❤️ Agradecimentos
-
-- Inspirado no jogo original "Termo".
-- Desenvolvido com a biblioteca GTK para interfaces gráficas.
