@@ -51,7 +51,7 @@ sudo dnf install gtk3-devel
 
 2. Compile o código:
    ```bash
-   gcc main.c termo.c -o game `pkg-config --cflags --libs gtk+-3.0` -lm
+   gcc main.c termo.c animacao.c -o game `pkg-config --cflags --libs gtk+-3.0` -lm
    ```
 
 3. Execute o jogo:

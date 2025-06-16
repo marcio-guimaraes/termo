@@ -1,4 +1,5 @@
 #include <gtk/gtk.h>
+#include "animacao.h"
 
 // Declara a função do termo.c para ser usada aqui
 void iniciar_jogo_termo(int argc, char *argv[]);
@@ -89,6 +90,8 @@ int main(int argc, char *argv[]) {
 
     GtkWidget *caixa = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
     gtk_container_set_border_width(GTK_CONTAINER(caixa), 30);
+
+    iniciar_animacao_termo(caixa);
 
     GtkWidget *btn_jogar = gtk_button_new_with_label("Jogar");
     GtkWidget *btn_descricao = gtk_button_new_with_label("Descrição");
