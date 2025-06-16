@@ -4,11 +4,11 @@
 #include <stdlib.h>
 #include <time.h>
 #include <ctype.h>
+#include "jogo_utils.h" // Inclui as funções utilitárias refatoradas
 
 // --- Constantes do Jogo ---
 #define MAX_TENTATIVAS 6
-#define TAMANHO_PALAVRA 5
-#define MAX_WORD_LENGTH 100
+// TAMANHO_PALAVRA e MAX_WORD_LENGTH agora vêm de jogo_utils.h
 #define MAX_WORDS_SORTEIO 10000
 #define MAX_WORDS_VALIDACAO 30000
 
@@ -31,28 +31,12 @@ int numPalavras_existentes;
 void mostrarTelaVitoria(GtkWidget *parent);
 void iniciar_jogo_termo(int argc, char *argv[]);
 
-// --- FUNÇÕES AUXILIARES ---
+// --- FUNÇÕES AUXILIARES (Específicas do Jogo) ---
+
 // --- Função auxiliar: limpa mensagem de erro após timeout ---
 gboolean limpar_label_mensagem(gpointer data) {
     gtk_label_set_text(GTK_LABEL(data), "");
     return G_SOURCE_REMOVE;
-}
-
-// --- Função auxiliar: normaliza e converte uma palavra para maiúsculas ---
-void normalizar_palavra(const char *input, char *output) {
-    gchar *normalized_string = g_utf8_normalize(input, -1, G_NORMALIZE_NFD);
-    gchar *out_ptr = output;
-    const gchar *p = normalized_string;
-    while (*p) {
-        gunichar uc = g_utf8_get_char(p);
-        if (!g_unichar_ismark(uc)) {
-            gunichar upper_char = g_unichar_toupper(uc);
-            out_ptr += g_unichar_to_utf8(upper_char, out_ptr);
-        }
-        p = g_utf8_next_char(p);
-    }
-    *out_ptr = '\0';
-    g_free(normalized_string);
 }
 
 // --- Função auxiliar: valida se a palavra tentada existe no dicionário ---
@@ -65,45 +49,6 @@ const char* validar_e_corrigir_palavra(const char *tentativa_normalizada) {
         }
     }
     return NULL;
-}
-
-// --- Carrega o arquivo com as palavras (sorteio e validação) ---
-void carregarPalavras(const char *nomeArquivo, char palavras_array[][MAX_WORD_LENGTH], int *numPalavras_ptr) {
-    FILE *arquivo = fopen(nomeArquivo, "r");
-    if (!arquivo) {
-        fprintf(stderr, "Erro ao abrir o arquivo: %s\n", nomeArquivo);
-        exit(1);
-    }
-    *numPalavras_ptr = 0;
-    int max_words = (palavras_array == palavras_sorteio) ? MAX_WORDS_SORTEIO : MAX_WORDS_VALIDACAO;
-    char buffer[MAX_WORD_LENGTH];
-    while (*numPalavras_ptr < max_words && fgets(buffer, MAX_WORD_LENGTH, arquivo)) {
-        buffer[strcspn(buffer, "\r\n")] = '\0';
-        if (g_utf8_strlen(buffer, -1) == TAMANHO_PALAVRA) {
-            strcpy(palavras_array[*numPalavras_ptr], buffer);
-            (*numPalavras_ptr)++;
-        }
-    }
-    fclose(arquivo);
-}
-
-// --- Sorteia uma palavra aleatória ---
-void selecionarPalavraAleatoria(char palavras_param[][MAX_WORD_LENGTH], int numPalavras_param, char *palavraSelecionada) {
-    srand(time(NULL));
-    int index = rand() % numPalavras_param;
-    strcpy(palavraSelecionada, palavras_param[index]);
-}
-
-
-// --- Aplica cor em um widget via CSS ---
-void aplicarCor(GtkWidget *widget, const char *corCSS) {
-    GtkStyleContext *context = gtk_widget_get_style_context(widget);
-    GtkCssProvider *provider = gtk_css_provider_new();
-    char css[128];
-    snprintf(css, sizeof(css), "* { background-color: %s; color: white; font-weight: bold; }", corCSS);
-    gtk_css_provider_load_from_data(provider, css, -1, NULL);
-    gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
-    g_object_unref(provider);
 }
 
 // --- Inicializa o teclado virtual ---
@@ -145,7 +90,7 @@ void atualizarTeclado(const char *palavra_tentada, const char *palavra_certa_rea
     for (int i = 0; i < TAMANHO_PALAVRA; i++) {
         if (tentada_norm[i] == certa_norm[i]) {
             int indice = mapeamentoTeclas[tentada_norm[i] - 'A'];
-            if (indice >= 0 && indice < 26) aplicarCor(teclas[indice], "#32CD32");
+            if (indice >= 0 && indice < 26) aplicar_cor_widget(teclas[indice], "#32CD32");
             letrasUsadas[i] = 1;
         }
     }
@@ -163,7 +108,7 @@ void atualizarTeclado(const char *palavra_tentada, const char *palavra_certa_rea
             }
             if (achou) {
                 int indice = mapeamentoTeclas[tentada_norm[i] - 'A'];
-                if (indice >= 0 && indice < 26) aplicarCor(teclas[indice], "#FFD700");
+                if (indice >= 0 && indice < 26) aplicar_cor_widget(teclas[indice], "#FFD700");
             }
         }
     }
@@ -179,7 +124,7 @@ void atualizarTeclado(const char *palavra_tentada, const char *palavra_certa_rea
         }
         if (!achou) {
             int indice = mapeamentoTeclas[tentada_norm[i] - 'A'];
-            if (indice >= 0 && indice < 26) aplicarCor(teclas[indice], "#696969");
+            if (indice >= 0 && indice < 26) aplicar_cor_widget(teclas[indice], "#696969");
         }
     }
 }
@@ -222,7 +167,7 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr) {
         gunichar uc_corr = g_utf8_get_char(g_utf8_offset_to_pointer(p_corr, i));
         gunichar uc_cert = g_utf8_get_char(g_utf8_offset_to_pointer(p_cert, i));
         if (uc_corr == uc_cert) {
-            aplicarCor(grid_tiles[tentativaAtual][i], "#32CD32");
+            aplicar_cor_widget(grid_tiles[tentativaAtual][i], "#32CD32");
             usadas_palavra[i] = 1;
         }
     }
@@ -240,7 +185,7 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr) {
                 break;
             }
         }
-        aplicarCor(grid_tiles[tentativaAtual][i], achou ? "#FFD700" : "#696969");
+        aplicar_cor_widget(grid_tiles[tentativaAtual][i], achou ? "#FFD700" : "#696969");
     }
 
     tentativaAtual++;
@@ -281,14 +226,24 @@ void iniciar_jogo_termo(int argc, char *argv[]) {
     tentativaAtual = 0;
     gtk_init(&argc, &argv);
 
-     // Carregamento de dicionário de palavras
-    carregarPalavras("palavras.txt", palavras_sorteio, &numPalavras_sorteio);
-    if (numPalavras_sorteio == 0) { exit(1); }
-    
-    carregarPalavras("palavras.txt", palavras_existentes, &numPalavras_existentes);
-    if (numPalavras_existentes == 0) { exit(1); }
+    // Inicializa o gerador de números aleatórios
+    srand(time(NULL));
 
-    selecionarPalavraAleatoria(palavras_sorteio, numPalavras_sorteio, palavraCerta);
+    // Carregamento de dicionário de palavras usando a função utilitária
+    numPalavras_sorteio = carregar_palavras_do_arquivo("palavras.txt", palavras_sorteio, MAX_WORDS_SORTEIO);
+    if (numPalavras_sorteio == 0) { 
+        fprintf(stderr, "Nenhuma palavra de sorteio carregada. Verifique o arquivo palavras.txt\n");
+        exit(1); 
+    }
+    
+    numPalavras_existentes = carregar_palavras_do_arquivo("palavras.txt", palavras_existentes, MAX_WORDS_VALIDACAO);
+    if (numPalavras_existentes == 0) {
+        fprintf(stderr, "Nenhuma palavra de validação carregada. Verifique o arquivo palavras.txt\n");
+        exit(1); 
+    }
+
+    // Seleciona a palavra do jogo
+    selecionar_palavra_aleatoria(palavras_sorteio, numPalavras_sorteio, palavraCerta);
 
     // Construção da interface GTK
     GtkWidget *janela = gtk_window_new(GTK_WINDOW_TOPLEVEL);
