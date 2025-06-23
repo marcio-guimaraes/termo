@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     aplicarEstiloGlobal();
 
     GtkWidget *janela = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(janela), "Menu - Termo");
+    gtk_window_set_title(GTK_WINDOW(janela), "Menu");
     gtk_window_set_default_size(GTK_WINDOW(janela), 300, 400);
     gtk_window_set_position(GTK_WINDOW(janela), GTK_WIN_POS_CENTER);
 

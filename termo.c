@@ -290,7 +290,7 @@ void iniciar_jogo_termo(int argc, char *argv[]) {
 
     // Construção da interface GTK
     GtkWidget *janela = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(janela), "Termo - GTK");
+    gtk_window_set_title(GTK_WINDOW(janela), "Termo - Desktop");
     gtk_window_set_default_size(GTK_WINDOW(janela), 400, 700);
     gtk_window_set_position(GTK_WINDOW(janela), GTK_WIN_POS_CENTER);
 
