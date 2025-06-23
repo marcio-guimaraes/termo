@@ -8,7 +8,6 @@
 
 // --- Constantes do Jogo ---
 #define MAX_TENTATIVAS 6
-// TAMANHO_PALAVRA e MAX_WORD_LENGTH agora vêm de jogo_utils.h
 #define MAX_WORDS_SORTEIO 10000
 #define MAX_WORDS_VALIDACAO 30000
 
@@ -234,9 +233,6 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr) {
 
     // A comparação final agora compara a palavra do dicionário (que pode ser com acento)
     // com a palavra secreta original (com acento).
-    // Se a intenção é que "AVIAO" e "AVIÃO" sejam considerados o mesmo para VITÓRIA,
-    // aqui você deveria comparar a tentativa normalizada com a palavraCerta_normalizada.
-    // Por exemplo: if (strcmp(tentativa_para_busca, palavraCerta_normalizada) == 0)
     if (strcmp(palavra_corrigida_do_dicionario, palavraCerta) == 0) {
         mostrarTelaVitoria(gtk_widget_get_toplevel(GTK_WIDGET(botao)));
     } else if (tentativaAtual == MAX_TENTATIVAS) {

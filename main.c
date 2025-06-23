@@ -39,7 +39,7 @@ void on_descricao_clicked(GtkButton *button, gpointer user_data) {
         "Descubra a palavra secreta em até 6 tentativas!");
 
     // Montamos o texto secundário com a formatação Pango.
-    // As cores são as mesmas usadas no jogo em termo.c
+    // As cores são as mesmas usadas no jogo termo
     const char *secondary_text =
         "\n<b>Regras:</b>\n"
         "Após cada tentativa, as letras mudam de cor:\n\n"
