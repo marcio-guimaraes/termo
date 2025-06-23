@@ -13,7 +13,8 @@
 #define MAX_WORDS_VALIDACAO 30000
 
 // --- Variáveis Globais ---
-char palavraCerta[MAX_WORD_LENGTH];
+char palavraCerta[MAX_WORD_LENGTH]; // Esta vai armazenar a palavra sorteada ORIGINAL (com acentos)
+char palavraCerta_normalizada[MAX_WORD_LENGTH]; // Esta vai armazenar a palavra sorteada NORMALIZADA (sem acentos)
 GtkWidget *grid;
 GtkWidget *tecladoGrid;
 GtkWidget *teclas[26];
@@ -40,15 +41,16 @@ gboolean limpar_label_mensagem(gpointer data) {
 }
 
 // --- Função auxiliar: valida se a palavra tentada existe no dicionário ---
-const char* validar_e_corrigir_palavra(const char *tentativa_normalizada) {
-    char palavra_dicionario_normalizada[MAX_WORD_LENGTH];
+const char* validar_e_corrigir_palavra(const char *tentativa_normalizada_para_busca) {
+    char palavra_dicionario_normalizada_para_busca[MAX_WORD_LENGTH];
     for (int i = 0; i < numPalavras_existentes; i++) {
-        normalizar_palavra(palavras_existentes[i], palavra_dicionario_normalizada);
-        if (strcmp(tentativa_normalizada, palavra_dicionario_normalizada) == 0) {
-            return palavras_existentes[i];
+        // Normaliza a palavra do dicionário para a busca (sem acentos, maiúsculas)
+        normalizar_palavra(palavras_existentes[i], palavra_dicionario_normalizada_para_busca);
+        if (strcmp(tentativa_normalizada_para_busca, palavra_dicionario_normalizada_para_busca) == 0) {
+            return palavras_existentes[i]; // Retorna a palavra ORIGINAL do dicionário
         }
     }
-    return NULL;
+    return NULL; // Não encontrou
 }
 
 // --- Inicializa o teclado virtual ---
@@ -80,51 +82,54 @@ void inicializarTeclado(GtkWidget *caixaVertical) {
 }
 
 // --- Atualiza as cores do teclado após tentativa ---
-void atualizarTeclado(const char *palavra_tentada, const char *palavra_certa_real) {
-    char tentada_norm[MAX_WORD_LENGTH], certa_norm[MAX_WORD_LENGTH];
-    normalizar_palavra(palavra_tentada, tentada_norm);
-    normalizar_palavra(palavra_certa_real, certa_norm);
-    int letrasUsadas[TAMANHO_PALAVRA] = {0};
+void atualizarTeclado(const char *palavra_tentada_original, const char *palavra_certa_original) {
+    // Normaliza ambas as palavras para maiúsculas e sem acentos para a lógica de coloração do teclado.
+    char tentada_normalizada_teclado[MAX_WORD_LENGTH];
+    char certa_normalizada_teclado[MAX_WORD_LENGTH];
+    normalizar_palavra(palavra_tentada_original, tentada_normalizada_teclado);
+    normalizar_palavra(palavra_certa_original, certa_normalizada_teclado);
 
-    // Letras corretas (verde)
-    for (int i = 0; i < TAMANHO_PALAVRA; i++) {
-        if (tentada_norm[i] == certa_norm[i]) {
-            int indice = mapeamentoTeclas[tentada_norm[i] - 'A'];
-            if (indice >= 0 && indice < 26) aplicar_cor_widget(teclas[indice], "#32CD32");
-            letrasUsadas[i] = 1;
+    int num_chars = g_utf8_strlen(tentada_normalizada_teclado, -1);
+    if (num_chars == -1) return; // Erro ou string vazia
+
+    int letras_certa_usadas_teclado[TAMANHO_PALAVRA] = {0}; // Marca letras da palavra certa que já foram "usadas"
+
+    // Letras corretas (verde) para o teclado
+    for (int i = 0; i < num_chars; i++) {
+        gunichar uc_tentada = g_utf8_get_char(g_utf8_offset_to_pointer(tentada_normalizada_teclado, i));
+        gunichar uc_certa = g_utf8_get_char(g_utf8_offset_to_pointer(certa_normalizada_teclado, i));
+
+        if (uc_tentada == uc_certa) {
+            if (uc_tentada >= 'A' && uc_tentada <= 'Z') { // Mapeia apenas letras A-Z
+                int indice = mapeamentoTeclas[uc_tentada - 'A'];
+                if (indice >= 0 && indice < 26) aplicar_cor_widget(teclas[indice], "#32CD32");
+            }
+            letras_certa_usadas_teclado[i] = 1;
         }
     }
 
-    // Letras existentes em posição errada (amarelo)
-    for (int i = 0; i < TAMANHO_PALAVRA; i++) {
-        if (tentada_norm[i] != certa_norm[i]) {
-            int achou = 0;
-            for (int j = 0; j < TAMANHO_PALAVRA; j++) {
-                if (tentada_norm[i] == certa_norm[j] && !letrasUsadas[j]) {
-                    achou = 1;
-                    letrasUsadas[j] = 1;
-                    break;
-                }
-            }
-            if (achou) {
-                int indice = mapeamentoTeclas[tentada_norm[i] - 'A'];
-                if (indice >= 0 && indice < 26) aplicar_cor_widget(teclas[indice], "#FFD700");
-            }
-        }
-    }
+    // Letras existentes em posição errada (amarelo) ou inexistentes (cinza) para o teclado
+    for (int i = 0; i < num_chars; i++) {
+        gunichar uc_tentada = g_utf8_get_char(g_utf8_offset_to_pointer(tentada_normalizada_teclado, i));
+        gunichar uc_certa_i = g_utf8_get_char(g_utf8_offset_to_pointer(certa_normalizada_teclado, i));
 
-    // Letras inexistentes (cinza)
-    for (int i = 0; i < TAMANHO_PALAVRA; i++) {
-        int achou = 0;
-        for (int j = 0; j < TAMANHO_PALAVRA; j++) {
-            if (tentada_norm[i] == certa_norm[j]) {
-                achou = 1;
+        if (uc_tentada == uc_certa_i) continue; // Se já foi marcada como verde, pular
+
+        int achou_na_palavra_certa = 0;
+        for (int j = 0; j < num_chars; j++) {
+            gunichar uc_certa_j = g_utf8_get_char(g_utf8_offset_to_pointer(certa_normalizada_teclado, j));
+            if (!letras_certa_usadas_teclado[j] && uc_tentada == uc_certa_j) {
+                achou_na_palavra_certa = 1;
+                letras_certa_usadas_teclado[j] = 1; // Marcar como usada
                 break;
             }
         }
-        if (!achou) {
-            int indice = mapeamentoTeclas[tentada_norm[i] - 'A'];
-            if (indice >= 0 && indice < 26) aplicar_cor_widget(teclas[indice], "#696969");
+
+        if (uc_tentada >= 'A' && uc_tentada <= 'Z') {
+            int indice = mapeamentoTeclas[uc_tentada - 'A'];
+            if (indice >= 0 && indice < 26) {
+                aplicar_cor_widget(teclas[indice], achou_na_palavra_certa ? "#FFD700" : "#696969");
+            }
         }
     }
 }
@@ -133,59 +138,89 @@ void atualizarTeclado(const char *palavra_tentada, const char *palavra_certa_rea
 void on_submit_clicked(GtkButton *botao, gpointer entryPtr) {
     if (tentativaAtual >= MAX_TENTATIVAS) return;
 
-    const char *entrada = gtk_entry_get_text(GTK_ENTRY(entryPtr));
-    if (g_utf8_strlen(entrada, -1) != TAMANHO_PALAVRA) return;
+    const char *entrada_original = gtk_entry_get_text(GTK_ENTRY(entryPtr));
+    int len_entrada = g_utf8_strlen(entrada_original, -1);
+    if (len_entrada == -1 || len_entrada != TAMANHO_PALAVRA) {
+        gtk_label_set_text(GTK_LABEL(labelMensagem), "Palavra deve ter 5 letras!");
+        g_timeout_add(2000, limpar_label_mensagem, labelMensagem);
+        gtk_entry_set_text(GTK_ENTRY(entryPtr), "");
+        return;
+    }
 
-    char tentativa_normalizada[MAX_WORD_LENGTH];
-    normalizar_palavra(entrada, tentativa_normalizada);
+    // A palavra digitada pelo usuário, normalizada (sem acentos, maiúsculas), para busca no dicionário
+    char tentativa_para_busca[MAX_WORD_LENGTH];
+    normalizar_palavra(entrada_original, tentativa_para_busca);
 
-    const char *palavra_corrigida = validar_e_corrigir_palavra(tentativa_normalizada);
+    // Valida se a palavra (normalizada para busca) existe no dicionário
+    // Retorna a palavra ORIGINAL (com acentos) do dicionário se encontrada.
+    const char *palavra_corrigida_do_dicionario = validar_e_corrigir_palavra(tentativa_para_busca);
 
-    if (palavra_corrigida == NULL) {
+    if (palavra_corrigida_do_dicionario == NULL) {
         gtk_label_set_text(GTK_LABEL(labelMensagem), "Palavra inválida!");
         g_timeout_add(2000, limpar_label_mensagem, labelMensagem);
         gtk_entry_set_text(GTK_ENTRY(entryPtr), "");
         return;
     }
 
-    atualizarTeclado(palavra_corrigida, palavraCerta);
+    // Atualiza o teclado usando a palavra ORIGINAL do dicionário e a palavra secreta ORIGINAL
+    // (A função atualizarTeclado internamente as normaliza para as comparações das teclas)
+    atualizarTeclado(palavra_corrigida_do_dicionario, palavraCerta);
 
-    int usadas_palavra[TAMANHO_PALAVRA] = {0};
-    
-    const gchar *p_corr = palavra_corrigida;
-    for(int i = 0; i < TAMANHO_PALAVRA; i++) {
+    // --- Lógica para colorir os tiles do grid ---
+    // Agora, as comparações para colorir os tiles IGNORAM ACENTOS, usando as versões NORMALIZADAS das palavras.
+    char tentada_normalizada_para_tiles[MAX_WORD_LENGTH];
+    char certa_normalizada_para_tiles[MAX_WORD_LENGTH];
+    normalizar_palavra(palavra_corrigida_do_dicionario, tentada_normalizada_para_tiles); // Normaliza a palavra do dicionário
+    normalizar_palavra(palavraCerta, certa_normalizada_para_tiles);                   // Normaliza a palavra certa
+
+    const gchar *p_tentada_para_tiles = tentada_normalizada_para_tiles;
+    const gchar *p_certa_para_tiles = certa_normalizada_para_tiles;
+
+    int num_chars_tentada_norm = g_utf8_strlen(p_tentada_para_tiles, -1);
+    // if (num_chars_tentada_norm == -1) já verificado acima.
+
+    int usadas_palavra_certa_para_tiles[TAMANHO_PALAVRA] = {0}; // Marca letras da palavra certa (normalizada) que já foram usadas
+
+    // Preenche os labels do grid com a palavra tentada ORIGINAL (com acento, se corrigida pelo dicionário)
+    const gchar *p_entrada_original_para_label = palavra_corrigida_do_dicionario;
+    for(int i = 0; i < num_chars_tentada_norm; i++) { // Usa num_chars_tentada_norm para iterar pelos caracteres
         GtkWidget *label = grid_tiles[tentativaAtual][i];
-        char char_str[8] = {0};
-        strncpy(char_str, p_corr, g_utf8_next_char(p_corr) - p_corr);
+        gunichar uc_char = g_utf8_get_char(g_utf8_offset_to_pointer(p_entrada_original_para_label, i));
+        char char_str[8] = {0}; // Buffer para o caractere UTF-8
+        g_unichar_to_utf8(uc_char, char_str); // Converte o gunichar de volta para UTF-8 para o label
         gtk_label_set_text(GTK_LABEL(label), char_str);
-        p_corr = g_utf8_next_char(p_corr);
     }
-    
-    p_corr = palavra_corrigida;
-    const gchar *p_cert = palavraCerta;
-    for (int i = 0; i < TAMANHO_PALAVRA; i++) {
-        gunichar uc_corr = g_utf8_get_char(g_utf8_offset_to_pointer(p_corr, i));
-        gunichar uc_cert = g_utf8_get_char(g_utf8_offset_to_pointer(p_cert, i));
-        if (uc_corr == uc_cert) {
+
+    // Letras corretas na posição certa (verde)
+    for (int i = 0; i < num_chars_tentada_norm; i++) {
+        gunichar uc_tentada_norm = g_utf8_get_char(g_utf8_offset_to_pointer(p_tentada_para_tiles, i));
+        gunichar uc_certa_norm = g_utf8_get_char(g_utf8_offset_to_pointer(p_certa_para_tiles, i));
+
+        if (uc_tentada_norm == uc_certa_norm) {
             aplicar_cor_widget(grid_tiles[tentativaAtual][i], "#32CD32");
-            usadas_palavra[i] = 1;
+            usadas_palavra_certa_para_tiles[i] = 1; // Marca a letra na palavra certa normalizada como usada
         }
     }
-    for (int i = 0; i < TAMANHO_PALAVRA; i++) {
-        gunichar uc_corr = g_utf8_get_char(g_utf8_offset_to_pointer(p_corr, i));
-        gunichar uc_cert_i = g_utf8_get_char(g_utf8_offset_to_pointer(p_cert, i));
-        if (uc_corr == uc_cert_i) continue;
-        
-        int achou = 0;
-        for (int j = 0; j < TAMANHO_PALAVRA; j++) {
-            gunichar uc_cert_j = g_utf8_get_char(g_utf8_offset_to_pointer(p_cert, j));
-            if (!usadas_palavra[j] && uc_corr == uc_cert_j) {
-                achou = 1;
-                usadas_palavra[j] = 1;
+
+    // Letras presentes, mas na posição errada (amarelo) ou inexistentes (cinza)
+    for (int i = 0; i < num_chars_tentada_norm; i++) {
+        gunichar uc_tentada_norm = g_utf8_get_char(g_utf8_offset_to_pointer(p_tentada_para_tiles, i));
+        gunichar uc_certa_na_pos_atual_norm = g_utf8_get_char(g_utf8_offset_to_pointer(p_certa_para_tiles, i));
+
+        // Se a letra já foi marcada como verde na iteração anterior, pula
+        if (uc_tentada_norm == uc_certa_na_pos_atual_norm) continue;
+
+        int achou_em_outra_posicao = 0;
+        for (int j = 0; j < num_chars_tentada_norm; j++) {
+            gunichar uc_certa_em_j_norm = g_utf8_get_char(g_utf8_offset_to_pointer(p_certa_para_tiles, j));
+            // Se a letra da palavra certa (normalizada) na posição 'j' ainda não foi usada e corresponde à letra tentada (normalizada)
+            if (!usadas_palavra_certa_para_tiles[j] && uc_tentada_norm == uc_certa_em_j_norm) {
+                achou_em_outra_posicao = 1;
+                usadas_palavra_certa_para_tiles[j] = 1; // Marca como usada
                 break;
             }
         }
-        aplicar_cor_widget(grid_tiles[tentativaAtual][i], achou ? "#FFD700" : "#696969");
+        aplicar_cor_widget(grid_tiles[tentativaAtual][i], achou_em_outra_posicao ? "#FFD700" : "#696969");
     }
 
     tentativaAtual++;
@@ -197,7 +232,12 @@ void on_submit_clicked(GtkButton *botao, gpointer entryPtr) {
 
     gtk_entry_set_text(GTK_ENTRY(entryPtr), "");
 
-    if (strcmp(palavra_corrigida, palavraCerta) == 0) {
+    // A comparação final agora compara a palavra do dicionário (que pode ser com acento)
+    // com a palavra secreta original (com acento).
+    // Se a intenção é que "AVIAO" e "AVIÃO" sejam considerados o mesmo para VITÓRIA,
+    // aqui você deveria comparar a tentativa normalizada com a palavraCerta_normalizada.
+    // Por exemplo: if (strcmp(tentativa_para_busca, palavraCerta_normalizada) == 0)
+    if (strcmp(palavra_corrigida_do_dicionario, palavraCerta) == 0) {
         mostrarTelaVitoria(gtk_widget_get_toplevel(GTK_WIDGET(botao)));
     } else if (tentativaAtual == MAX_TENTATIVAS) {
         char mensagem[256];
@@ -231,19 +271,22 @@ void iniciar_jogo_termo(int argc, char *argv[]) {
 
     // Carregamento de dicionário de palavras usando a função utilitária
     numPalavras_sorteio = carregar_palavras_do_arquivo("palavras.txt", palavras_sorteio, MAX_WORDS_SORTEIO);
-    if (numPalavras_sorteio == 0) { 
+    if (numPalavras_sorteio == 0) {
         fprintf(stderr, "Nenhuma palavra de sorteio carregada. Verifique o arquivo palavras.txt\n");
-        exit(1); 
+        exit(1);
     }
     
     numPalavras_existentes = carregar_palavras_do_arquivo("palavras.txt", palavras_existentes, MAX_WORDS_VALIDACAO);
     if (numPalavras_existentes == 0) {
         fprintf(stderr, "Nenhuma palavra de validação carregada. Verifique o arquivo palavras.txt\n");
-        exit(1); 
+        exit(1);
     }
 
-    // Seleciona a palavra do jogo
+    // Seleciona a palavra do jogo e a armazena na sua forma original
     selecionar_palavra_aleatoria(palavras_sorteio, numPalavras_sorteio, palavraCerta);
+    // Também armazena a versão normalizada (sem acentos) para comparações de coloração e vitória
+    normalizar_palavra(palavraCerta, palavraCerta_normalizada);
+
 
     // Construção da interface GTK
     GtkWidget *janela = gtk_window_new(GTK_WINDOW_TOPLEVEL);
